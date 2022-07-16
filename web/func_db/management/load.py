@@ -43,10 +43,8 @@ def load_bin(file_path: str, re_create: bool=False):
     for k, v in bin_info_dict.items():
         try:
             name = demangle(v['func_name'])
-            if name.startswith('_R'):
-                logging.debug(f'Demangled: {name}')
+            
         except:
             logging.error(f'Failed to demangle {name}')
-            continue
 
 
