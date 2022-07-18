@@ -59,7 +59,7 @@ def get_instructions(bb):
     ret = []
     start_addr, end_addr = bb.getMinAddress(), bb.getMaxAddress()
     ins = getInstructionAt(start_addr)
-    while start_addr <= ins.getAddress() <= end_addr:
+    while ins and (start_addr <= ins.getAddress() <= end_addr):
         ret.append(ins.toString())
         # The problem is, when ghidra fails to disasm the bytes right
         #   behind, the method returns the next disasmed instruction.
@@ -92,7 +92,7 @@ def get_sig(func):
     addr_lim = min(func.getBody().getMaxAddress().add(1), start_addr.add(0x20))
     instruction = getInstructionAt(start_addr)
     sig = ''
-    while instruction.address < addr_lim:
+    while instruction and instruction.address < addr_lim:
         valid_ref = False
         raw_bytes = instruction.getBytes()
         call_refs = list(filter(lambda r: r.getReferenceType().isCall(
@@ -171,13 +171,14 @@ if __name__ == '__main__':
     for func in func_list:
         func_name = func.toString()
         entry_point = func.getEntryPoint()
-        if func_name[:2] in ['_Z', '_R']:
-            func_info_dict[entry_point.toString()] = {
-                'func_name': func_name,
-                'edges': get_cfg(func),
-                'bbs': get_bbs_info(func),
-                'sig': get_sig(func)
-            }
+        is_rust_func = func_name[:2] in ['_Z', '_R']
+        func_info_dict[entry_point.toString()] = {
+            'func_name': func_name,
+            'is_rust_func': is_rust_func,
+            'edges': get_cfg(func),
+            'bbs': get_bbs_info(func),
+            'sig': get_sig(func) if is_rust_func else ''
+        }
 
     with open(os.path.join(base_dir, file_name + '.json'), 'w') as f:
         json.dump(func_info_dict, f, indent=2)
